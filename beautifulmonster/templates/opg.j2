@@ -1,0 +1,12 @@
+<title>{{ title }}</title>
+<meta name="description" content="{{ description }}" />
+<meta property="og:site_name" content="{{site_name}}" />
+<meta property="og:title" content="{{ title }}" />
+<meta property="og:type" content="{{ ogp_type }}" />
+<meta property="og:url" content="{{ url }}" />
+
+{% if image_url != None %}
+<meta property="og:image" content="{{ image_url }}" />
+{% endif %}
+
+<meta name="twitter:card" content="summary_large_image">

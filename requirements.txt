@@ -1,0 +1,8 @@
+beautifulsoup4
+flask
+Flask-SQLAlchemy
+markdown
+pyyaml
+janome
+whoosh
+libsass

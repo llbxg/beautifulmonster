@@ -1,0 +1,10 @@
+<link rel="preconnect" href="https://fonts.gstatic.com">
+
+{% for font_name, font_weight in font_list %}
+<link href="https://fonts.googleapis.com/css2?family={{font_name}}{{font_weight}}&display=swap" rel="stylesheet">
+{% endfor %}
+
+
+{% if icon %}
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+{% endif %}
