@@ -1,8 +1,8 @@
 from bs4 import BeautifulSoup as _BeautifulSoup
 
-from markdown import markdown
-from markdown.extensions.toc import TocExtension
-from markupsafe import Markup
+from markdown import markdown as _markdown
+from markdown.extensions.toc import TocExtension as _TocExtension
+from markupsafe import Markup as _Markup
 
 
 class Pot(object):
@@ -13,15 +13,15 @@ class Pot(object):
     """
     def __init__(self, contents):
         extensions = ['extra', 'attr_list', 'nl2br', 'tables',
-                      TocExtension(baselevel=1, toc_depth=2)]
-        html_string = markdown(contents, extensions=extensions)
+                      _TocExtension(baselevel=1, toc_depth=2)]
+        html_string = _markdown(contents, extensions=extensions)
         self.soup = _BeautifulSoup(html_string, "html.parser")
 
         self.katex = False
         self.m_code()
 
     def pour(self):
-        return Markup(str(self.soup))
+        return _Markup(str(self.soup))
 
     def m_code(self):
         """
