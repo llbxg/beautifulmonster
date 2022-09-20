@@ -121,8 +121,8 @@ class Config(object):
 
     @property
     def scss_css(self):
-        path_css = _join(self.static, self.y.get(CONFIG['PATH_CSS'], ""))
-        path_scss = _join(self.static, self.y.get(CONFIG['PATH_SCSS'], None))
+        path_css = _join(self.static, self.y.get(CONFIG['PATH_CSS'], ''))
+        path_scss = _join(self.static, self.y.get(CONFIG['PATH_SCSS'], ''))
         return (path_scss, path_css)
 
     def _join_w_cwd(self, path):

@@ -1,6 +1,7 @@
 from glob import glob as _glob
 from logging import getLogger as _getLogger
-from os.path import join as _join
+from os.path import join as _join, exists as _exists
+from os import makedirs as _makedirs
 
 import sass as _sass
 from sqlalchemy import create_engine as _create_engine, and_ as _and_
@@ -31,8 +32,13 @@ def _wrapper_create_engine(url):
 
 
 def building2(config):
-    _sass.compile(dirname=config.scss_css)
-    logger.info(f"compiled scss {_glob(config.scss_css[0]+'/*.scss')}")
+
+    path_scss, path_css = config.scss_css
+    if not _exists(path_scss):
+        _makedirs(path_scss, exist_ok=True)
+        logger.debug(f"makedirs({path_scss})")
+    _sass.compile(dirname=(path_scss, path_css))
+    logger.info(f"compiled scss {_glob(path_scss+'/*.scss')}")
 
     if not _debug_mode():
         return 0
