@@ -68,6 +68,10 @@ class Config(object):
         return self._join_w_cwd(template_dir)
 
     @property
+    def template_file(self):
+        return _join(self.template_folder, CONFIG['TEMPLATE_FILE_DEFAULT'])
+
+    @property
     def path_contents(self):
         return self.y.get(CONFIG['PATH_DIR'], CONFIG['PATH_DIR_DEFAULT'])
 

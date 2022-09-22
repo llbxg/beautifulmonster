@@ -3,6 +3,7 @@ CONFIG:
 
   DIR_TEMPLATE: templates
   DIR_TEMPLATE_DEFAULT: templates
+  TEMPLATE_FILE_DEFAULT: template.html
 
   PATH_DIR: directory
   PATH_DIR_DEFAULT: contents
