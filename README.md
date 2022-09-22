@@ -13,5 +13,5 @@
 **Please note that this library is in beta phase.**
 
 ```
-$ pip install https://github.com/llbxg/beautifulmonster.git
+$ pip install git+https://github.com/llbxg/beautifulmonster.git
 ```
