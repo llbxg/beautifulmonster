@@ -10,6 +10,7 @@ from sqlalchemy.orm import (scoped_session as _scoped_session,
 
 from .monster import Monster as _Monster
 from .ohh import Base as _Base, Love as _Love, Blue as _Blue
+from .puzzle import make_template as _make_template
 from .utils import debug_mode as _debug_mode
 
 
@@ -32,6 +33,10 @@ def _wrapper_create_engine(url):
 
 
 def building2(config):
+    template_file = config.template_file
+    if not _exists(template_file):
+        _makedirs(config.template_folder, exist_ok=True)
+        _make_template(template_file)
 
     path_scss, path_css = config.scss_css
     if not _exists(path_scss):
