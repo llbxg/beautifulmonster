@@ -3,7 +3,15 @@ from urllib import parse as _parse
 
 from markupsafe import Markup as _Markup
 
-from .config import env as _env
+from .config import env as _env, path_templates_jinja2 as _path_templates
+
+
+def make_template(template_file):
+    with open(_join(_path_templates, 'template.j2')) as f:
+        data = f.read()
+
+    with open(template_file, mode='w') as f:
+        f.write(data)
 
 
 def make_fonts(fonts):
