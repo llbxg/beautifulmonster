@@ -13,8 +13,10 @@ PATH_SETTINGS = _join(_dirname(__file__), '_settings.yaml')
 with open(PATH_SETTINGS) as f:
     YAML_SETTINGS = _yaml.safe_load(f)
 SETTINGS_4_JINJA2 = YAML_SETTINGS['jinja2']
-path = _join(_dirname(__file__), SETTINGS_4_JINJA2['DIR_TEMPLATES'])
-env = _Environment(loader=_FileSystemLoader(path))
+
+path_templates_jinja2 = _join(
+    _dirname(__file__), SETTINGS_4_JINJA2['DIR_TEMPLATES'])
+env = _Environment(loader=_FileSystemLoader(path_templates_jinja2))
 
 CONFIG = YAML_SETTINGS['CONFIG']
 CONFIG_OGP = YAML_SETTINGS['OGP']
