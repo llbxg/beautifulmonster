@@ -1,4 +1,5 @@
 # beautiful monster 🐩 
+[![flake8](https://github.com/llbxg/beautifulmonster/actions/workflows/flake8.yaml/badge.svg)](https://github.com/llbxg/beautifulmonster/actions/workflows/flake8.yaml)
 
 **beautiful monster** makes the content written in markdown format a site with Flask.
 - Settings are managed by `config.yaml`. 
