@@ -28,7 +28,7 @@ logger.debug(f"debug mode: {'on' if debug else 'off'}")
 _environ['FLASK_DEBUG'] = 'True' if debug else 'False'
 
 
-def make_app():
+def make_app(category_boolean_items=None):
 
     config = Config()
     security_headers = config.security_headers
@@ -84,15 +84,25 @@ def make_app():
         return r
 
     for category, value in config.category.items():
+        logger.debug(f'handle with {category_boolean_items} in config.yaml')
+
         def temp_fucn(_id):
             session = make_session(config.url)
             path = _join(config.path_contents_dir, category, f'{_id}.md')
             monster = Monster(path)
             kwargs = {}
+
             if value.get('laglead', False):
                 lag_a = lag(session, monster.path)
                 lead_a = lead(session, monster.path)
                 kwargs.update({'lag': lag_a, 'lead': lead_a})
+
+            if category_boolean_items is not None:
+                for item in category_boolean_items:
+                    if value.get(item, False):
+                        kwargs.update({item: True})
+            logger.debug(f'Use {kwargs=} in html')
+
             r = wrapper_render_template(category, monster=monster, **kwargs)
             session.close()
             return r
