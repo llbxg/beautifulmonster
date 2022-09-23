@@ -1,11 +1,15 @@
-from bs4 import BeautifulSoup as _BeautifulSoup
+from logging import getLogger as _getLogger
 
+from bs4 import BeautifulSoup as _BeautifulSoup, Tag as _Tag
 from markdown import markdown as _markdown
 from markdown.extensions.toc import TocExtension as _TocExtension
 from markdown.extensions.wikilinks import (
     WikiLinkExtension as _WikiLink,
     WikiLinksInlineProcessor as _WikiLinksInlineProcessor)
 from markupsafe import Markup as _Markup
+
+
+logger = _getLogger(__name__)
 
 
 class _Wiki(_WikiLink):
@@ -24,7 +28,7 @@ class Pot(object):
     課題
     - TOCはたぶんここで作るはず。
     """
-    def __init__(self, contents):
+    def __init__(self, contents, toc=True):
         extensions = ['extra', 'attr_list', 'nl2br', 'tables',
                       _TocExtension(baselevel=1, toc_depth=2),
                       _Wiki(base_url='/', end_url='/')]
@@ -34,8 +38,20 @@ class Pot(object):
         self.katex = False
         self.m_code()
 
+        if toc:
+            self.custom_toc()
+
     def pour(self):
         return _Markup(str(self.soup))
+
+    def custom_toc(self):
+        logger.debug('use self.custom_toc')
+        toc = self.soup.find("div", attrs={'class': "toc"})
+
+        if toc is not None and isinstance(toc, _Tag):
+            toc['id'] = 'toc'
+            if (ul := toc.find('ul')) is not None and isinstance(ul, _Tag):
+                ul.name = 'ol'
 
     def m_code(self):
         """
