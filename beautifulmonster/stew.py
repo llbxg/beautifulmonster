@@ -60,8 +60,9 @@ class Pot(object):
         pres = self.soup.find_all("pre")
 
         for pre in pres:
+            codes = pre.find_all('code')
             try:
-                lang = pre.find('code')['class'][0]
+                lang = codes[0]['class'][0]
             except KeyError:
                 lang = None
 
@@ -81,6 +82,10 @@ class Pot(object):
                 lang = ''
 
             pre['class'] = f'prettyprint {lang}'
+
+            for code in codes:
+                logger.debug(f'{type(code)}')
+                code['class'] = 'in-pre'
 
     def get_doc(self):
         doc = self.soup.find('p')
