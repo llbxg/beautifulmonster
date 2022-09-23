@@ -45,12 +45,12 @@ class Pot(object):
         return _Markup(str(self.soup))
 
     def custom_toc(self):
-        logger.debug(f'use self.custom_toc')
-        toc = self.soup.find("div", attrs={'class':"toc"})
+        logger.debug('use self.custom_toc')
+        toc = self.soup.find("div", attrs={'class': "toc"})
 
         if toc is not None and isinstance(toc, _Tag):
             toc['id'] = 'toc'
-            if (ul:=toc.find('ul')) is not None and isinstance(ul, _Tag):
+            if (ul := toc.find('ul')) is not None and isinstance(ul, _Tag):
                 ul.name = 'ol'
 
     def m_code(self):
