@@ -124,6 +124,15 @@ def make_app(category_boolean_items=None):
     def about():
         return wrapper_render_template('about')
 
+    @app.route('/all/')
+    def all():
+        session = make_session(config.url)
+        r = wrapper_render_template(
+            'all',
+            loves=session.query(Love).order_by(_desc(Love.created)).all())
+        session.close()
+        return r
+
     @app.route('/search')
     def search():
         req = _request.args
