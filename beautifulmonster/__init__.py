@@ -107,7 +107,8 @@ def make_app(category_boolean_items=None):
             session.close()
             return r
 
-        app.add_url_rule(f'/{category}/<_id>/', view_func=temp_fucn)
+        app.add_url_rule(f'/{category}/<path:_id>', view_func=temp_fucn,
+                         endpoint=category)
 
     @app.route('/favicon.ico')
     def favicon():
