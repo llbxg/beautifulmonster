@@ -1,4 +1,5 @@
 from dataclasses import dataclass as _dataclass, field as _field
+from logging import getLogger as _getLogger
 from os import getcwd as _getcwd
 from os.path import join as _join, dirname as _dirname, exists as _exists
 import sys as _sys
@@ -6,6 +7,9 @@ import sys as _sys
 from jinja2 import (Environment as _Environment,
                     FileSystemLoader as _FileSystemLoader)
 import yaml as _yaml
+
+
+_logger = _getLogger(__name__)
 
 
 PATH_SETTINGS = _join(_dirname(__file__), '_settings.yaml')
@@ -47,11 +51,13 @@ class Config(object):
         self.ogp = self._make_ogp()
 
     def _get_config(self):
+        path = _join(self.path_directory, CONFIG['PATH_CONFIG'])
         try:
-            with open(_join(self.path_directory, CONFIG['PATH_CONFIG'])) as f:
+            with open(path) as f:
                 y = _yaml.safe_load(f)
 
-        except Exception:
+        except Exception as e:
+            _logger.error(f"Can't open {path}. \n{e}")
             y = {}
         return y
 
