@@ -1,5 +1,6 @@
 from distutils.util import strtobool as _strtobool
 from functools import partial as _partial
+from glob import glob as _glob
 import json as _json
 from logging import getLogger as _getLogger, NullHandler as _NullHandler
 from os.path import join as _join, isfile as _isfile
@@ -27,6 +28,19 @@ debug = bool(_strtobool(_environ.get('BM_DEBUG', 'False')))
 _logger.debug(f"debug mode: {'on' if debug else 'off'}")
 
 _environ['FLASK_DEBUG'] = 'True' if debug else 'False'
+
+
+def debug_run(app, *args, **kwargs):
+    config = Config()
+
+    extra_files = []
+    extra_files.extend(_glob(f'{config.scss_css[0]}/*.scss'))
+    extra_files.extend(_glob(f'{config.path_contents_dir}/**/*.md'))
+    if kwargs.get('extra_files', False):
+        extra_files.extend(kwargs['extra_files'])
+    _logger.debug(f"Changes to these files are monitored. {extra_files}")
+
+    app.run(extra_files=extra_files, *args, **kwargs)
 
 
 def make_app(category_boolean_items=None):
