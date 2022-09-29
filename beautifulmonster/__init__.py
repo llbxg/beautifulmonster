@@ -1,6 +1,7 @@
 from distutils.util import strtobool as _strtobool
-import json
-from logging import getLogger, NullHandler
+from functools import partial as _partial
+import json as _json
+from logging import getLogger as _getLogger, NullHandler as _NullHandler
 from os.path import join as _join, isfile as _isfile
 from os import environ as _environ
 
@@ -18,12 +19,12 @@ from .ohh import Love, Blue, lead, lag
 from .puzzle import making_for_ogp, make_fonts, make_icons
 
 
-logger = getLogger(__name__)
-logger.addHandler(NullHandler())
+_logger = _getLogger(__name__)
+_logger.addHandler(_NullHandler())
 
 
 debug = bool(_strtobool(_environ.get('BM_DEBUG', 'False')))
-logger.debug(f"debug mode: {'on' if debug else 'off'}")
+_logger.debug(f"debug mode: {'on' if debug else 'off'}")
 
 _environ['FLASK_DEBUG'] = 'True' if debug else 'False'
 
@@ -84,31 +85,37 @@ def make_app(category_boolean_items=None):
         return r
 
     for category, value in config.category.items():
-        logger.debug(f'handle with {category_boolean_items} in config.yaml')
 
-        def temp_fucn(_id):
+        def temp_fucn(_id, cat, v):
             session = make_session(config.url)
-            path = _join(config.path_contents_dir, category, f'{_id}.md')
+            path = _join(config.path_contents_dir, cat, f'{_id}.md')
             monster = Monster(path)
-            kwargs = {}
 
-            if value.get('laglead', False):
+            kwargs = {}
+            bool_laglead = False
+
+            if v is not None:
+                if category_boolean_items is not None:
+                    for item in category_boolean_items:
+                        if v.get(item, False):
+                            kwargs.update({item: True})
+
+                bool_laglead = v.get('laglead', False)
+
+            if bool_laglead:
                 lag_a = lag(session, monster.path)
                 lead_a = lead(session, monster.path)
-                kwargs.update({'lag': lag_a, 'lead': lead_a})
+            else:
+                lag_a, lead_a = None, None
+            kwargs.update({'lag': lag_a, 'lead': lead_a})
 
-            if category_boolean_items is not None:
-                for item in category_boolean_items:
-                    if value.get(item, False):
-                        kwargs.update({item: True})
-            logger.debug(f'Use {kwargs=} in html')
-
-            r = wrapper_render_template(category, monster=monster, **kwargs)
+            r = wrapper_render_template(cat, monster=monster, **kwargs)
             session.close()
             return r
 
-        app.add_url_rule(f'/{category}/<path:_id>', view_func=temp_fucn,
-                         endpoint=category)
+        view_func = _partial(temp_fucn, cat=category, v=value)
+        app.add_url_rule(f'/{category}/<_id>/', endpoint=category,
+                         view_func=view_func)
 
     @app.route('/favicon.ico')
     def favicon():
@@ -152,15 +159,15 @@ def make_app(category_boolean_items=None):
         session = make_session(config.url)
         req = _request.args
         word = req.get('word', None)
-        logger.debug(word)
+        _logger.debug(word)
         if word is not None:
             results = searching(word, config.dir_index)
-            logger.debug(f'{results}')
+            _logger.debug(f'{results}')
             loves = session.query(Love).filter(Love.path.in_(results))
             loves = loves.all()
             loves = {love.path: love.to_dict() for love in loves}
-            logger.debug(f'{loves}')
-            loves = json.dumps(loves)
+            _logger.debug(f'{loves}')
+            loves = _json.dumps(loves)
             r = _jsonify(loves)
             session.close()
             return r
