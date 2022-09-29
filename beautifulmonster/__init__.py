@@ -1,7 +1,7 @@
 from distutils.util import strtobool as _strtobool
 from functools import partial as _partial
-import json
-from logging import getLogger, NullHandler
+import json as _json
+from logging import getLogger as _getLogger, NullHandler as _NullHandler
 from os.path import join as _join, isfile as _isfile
 from os import environ as _environ
 
@@ -19,12 +19,12 @@ from .ohh import Love, Blue, lead, lag
 from .puzzle import making_for_ogp, make_fonts, make_icons
 
 
-logger = getLogger(__name__)
-logger.addHandler(NullHandler())
+_logger = _getLogger(__name__)
+_logger.addHandler(_NullHandler())
 
 
 debug = bool(_strtobool(_environ.get('BM_DEBUG', 'False')))
-logger.debug(f"debug mode: {'on' if debug else 'off'}")
+_logger.debug(f"debug mode: {'on' if debug else 'off'}")
 
 _environ['FLASK_DEBUG'] = 'True' if debug else 'False'
 
@@ -159,15 +159,15 @@ def make_app(category_boolean_items=None):
         session = make_session(config.url)
         req = _request.args
         word = req.get('word', None)
-        logger.debug(word)
+        _logger.debug(word)
         if word is not None:
             results = searching(word, config.dir_index)
-            logger.debug(f'{results}')
+            _logger.debug(f'{results}')
             loves = session.query(Love).filter(Love.path.in_(results))
             loves = loves.all()
             loves = {love.path: love.to_dict() for love in loves}
-            logger.debug(f'{loves}')
-            loves = json.dumps(loves)
+            _logger.debug(f'{loves}')
+            loves = _json.dumps(loves)
             r = _jsonify(loves)
             session.close()
             return r
