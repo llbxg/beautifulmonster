@@ -1,11 +1,15 @@
 from dataclasses import dataclass as _dataclass, field as _field
+from logging import getLogger as _getLogger
 from os import getcwd as _getcwd
 from os.path import join as _join, dirname as _dirname, exists as _exists
-import sys as _sys
+from os import makedirs as _makedirs
 
 from jinja2 import (Environment as _Environment,
                     FileSystemLoader as _FileSystemLoader)
 import yaml as _yaml
+
+
+_logger = _getLogger(__name__)
 
 
 PATH_SETTINGS = _join(_dirname(__file__), '_settings.yaml')
@@ -40,18 +44,18 @@ class Config(object):
 
         self.y = self._get_config()
 
-        if not self._check_category():
-            print('nooooo')
-            _sys.exit(0)
+        self._check_category()
 
         self.ogp = self._make_ogp()
 
     def _get_config(self):
+        path = _join(self.path_directory, CONFIG['PATH_CONFIG'])
         try:
-            with open(_join(self.path_directory, CONFIG['PATH_CONFIG'])) as f:
+            with open(path) as f:
                 y = _yaml.safe_load(f)
 
-        except Exception:
+        except Exception as e:
+            _logger.error(f"Can't open {path}. \n{e}")
             y = {}
         return y
 
@@ -135,5 +139,9 @@ class Config(object):
         return _join(self.path_directory, path)
 
     def _check_category(self):
-        b = all([_exists(_join(self.path_contents, c)) for c in self.category])
-        return b
+        _logger.debug(self.category)
+        for c in self.category:
+            path = _join(self.path_directory, self.path_contents, c)
+            _logger.debug(path)
+            if not _exists(path):
+                _makedirs(path)
