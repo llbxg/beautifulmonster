@@ -1,0 +1,10 @@
+---
+title: {{ title }}
+created: {{ created }}
+tag:
+    {%- for tag in tags %}
+    - {{ tag }}
+    {%- endfor %}
+---
+
+{{ memo }}
