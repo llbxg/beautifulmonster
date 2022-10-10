@@ -1,9 +1,20 @@
-from os.path import join as _join
+from glob import glob as _glob
+from hashlib import md5 as _md5
+from logging import getLogger as _getLogger
+from os import remove as _remove
+from os.path import join as _join, basename as _basename
 from urllib import parse as _parse
+from urllib.request import urlopen as _urlopen
 
 from markupsafe import Markup as _Markup
 
 from .config import env as _env, path_templates_jinja2 as _path_templates
+from .utils import (get_update_date as _get_update_date,
+                    get_base_path as _get_base_path, read_yaml as _read_yaml,
+                    get_title_tag_string as _get_title_tag_string)
+
+
+_logger = _getLogger(__name__)
 
 
 def make_template(template_file):
@@ -98,3 +109,54 @@ def making_for_ogp(config, category, **kwargs):
     hey = tmpl.render(d)
 
     return _Markup(hey)
+
+
+def url_2_md(path, dir_out):
+    hash_existing = [_basename(hmd) for hmd in _glob(dir_out+'/*.md')]
+
+    y = _read_yaml(path)
+
+    hash_new = []
+    for k, v in y.items():
+        base = _get_base_path(path)
+
+        _hash = _md5()
+        _hash.update((k+str(v)).encode())
+        h = f'zzz_{base}_{_hash.hexdigest()}.md'
+        hash_new.append(h)
+
+        if h in hash_existing:
+            continue
+
+        try:
+            response = _urlopen(k)
+
+            title = _get_title_tag_string(response)
+            title = 'Missing title tag on site.' if title is None else title
+
+            for t in ['title', 'alias']:
+                title = v.get(t, title)
+
+        except Exception as e:
+            _logger.debug(f"urlopen: {e}")
+            title = str(e)
+
+        title = title.replace(":", "&#058;")
+        created = v.get('created', _get_update_date(path))
+
+        memo = v.get('memo', '')
+        if isinstance(memo, list):
+            memo = "\n".join(memo)
+
+        tag = v.get('tag', [])
+        tag = [base] if tag is None else tag + [base]
+
+        d = {'title': title, 'memo': memo, 'tags': tag, 'created': created}
+        tmpl = _env.get_template('url.j2')
+        with open(f"{dir_out}/{h}", 'w') as f:
+            f.write(tmpl.render(d))
+
+    diff = set(hash_existing) - set(hash_new)
+    for d in diff:
+        _logger.debug(f'remove: {d}')
+        _remove(dir_out+'/'+d)

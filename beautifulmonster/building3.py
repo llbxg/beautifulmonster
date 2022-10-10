@@ -10,7 +10,7 @@ from sqlalchemy.orm import (scoped_session as _scoped_session,
 
 from .monster import Monster as _Monster
 from .ohh import Base as _Base, Love as _Love, Blue as _Blue
-from .puzzle import make_template as _make_template
+from .puzzle import make_template as _make_template, url_2_md as _url_2_md
 from .utils import debug_mode as _debug_mode
 
 
@@ -54,7 +54,14 @@ def building2(config):
     session = make_session(config.url)
 
     path_list = []
-    for cat in config.category:
+    for cat, v in config.category.items():
+        logger.debug(f'cat: {cat}, {v}')
+        if v is not None and v.get('url', False):
+            logger.debug("making url.md from yaml")
+            path = _join(config.path_contents_dir, cat, '*.yaml')
+            for file_y in _glob(path):
+                _url_2_md(file_y, _join(config.path_contents_dir, cat))
+
         path = _join(config.path_contents_dir, cat, '*.md')
         for file in _glob(path):
             logger.debug(f"Deal w/ {file}")
