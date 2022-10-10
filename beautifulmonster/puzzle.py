@@ -141,6 +141,7 @@ def url_2_md(path, dir_out):
             _logger.debug(f"urlopen: {e}")
             title = str(e)
 
+        title = title.replace(":", "&#058;")
         created = v.get('created', _get_update_date(path))
 
         memo = v.get('memo', '')

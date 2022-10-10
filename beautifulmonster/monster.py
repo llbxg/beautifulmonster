@@ -7,6 +7,9 @@ from .utils import (make_hash as _make_hash, make_path as _make_path,
                     separate_yamlblock_contents as _s_y_c,)
 
 
+from markupsafe import Markup as _Markup
+
+
 class Monster(object):
     """
     Monsterはtemplateへ情報を提供する。Loveを通してdbとデータを共有する。
@@ -53,7 +56,7 @@ class Monster(object):
 
     @property
     def title(self):
-        return self.love.title
+        return _Markup(self.love.title)
 
     @property
     def katex(self):
