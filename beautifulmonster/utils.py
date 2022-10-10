@@ -1,9 +1,13 @@
 from datetime import datetime as _datetime
 from distutils.util import strtobool as _strtobool
 from hashlib import md5 as _md5
-from os.path import splitext as _splitext
+from os.path import splitext as _splitext, basename as _basename
 from os import environ as _environ
+from pathlib import Path as _Path
 import re as _re
+
+from bs4 import BeautifulSoup as _BeautifulSoup
+import yaml as _yaml
 
 
 def read_txt(path):
@@ -108,3 +112,31 @@ def make_path(path):
 def debug_mode():
     debug = _strtobool(_environ.get('BM_DEBUG', 'False'))
     return bool(debug)
+
+
+def get_update_date(path, format="{0:%Y-%m-%d}"):
+    p = _Path(path)
+    dt = _datetime.fromtimestamp(p.stat().st_mtime)
+    dt = format.format(dt)
+    return dt
+
+
+def get_base_path(path):
+    return _splitext(_basename(path))[0]
+
+
+def read_yaml(path):
+    with open(path, mode='r') as f:
+        y = _yaml.safe_load(f)
+    return y
+
+
+def get_title_tag_string(response):
+    title = None
+
+    soup = _BeautifulSoup(response, 'html.parser')
+    title_tag = soup.title
+    if title_tag is not None:
+        title = title_tag.string
+
+    return title
