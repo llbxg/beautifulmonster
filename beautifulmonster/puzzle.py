@@ -141,7 +141,7 @@ def url_2_md(path, dir_out):
             _logger.debug(f"urlopen: {e}")
             title = str(e)
 
-        for target, r in {":" : "&#058;", "\n" : ""}.items():
+        for target, r in {":": "&#058;", "\n": ""}.items():
             title = title.replace(target, r)
 
         created = v.get('created', _get_update_date(path))
@@ -154,7 +154,8 @@ def url_2_md(path, dir_out):
         tag = [tag] if isinstance(tag, str) else tag
         tag = [base] if tag is None else tag + [base]
 
-        d = {'title': title, 'memo': memo, 'tags': tag, 'created': created}
+        d = {'url': k, 'title': title,
+             'memo': memo, 'tags': tag, 'created': created}
         tmpl = _env.get_template('url.j2')
         with open(f"{dir_out}/{h}", 'w') as f:
             f.write(tmpl.render(d))
