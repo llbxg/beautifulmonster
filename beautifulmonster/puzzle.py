@@ -149,6 +149,7 @@ def url_2_md(path, dir_out):
             memo = "\n".join(memo)
 
         tag = v.get('tag', [])
+        tag = [tag] if isinstance(tag, str) else tag
         tag = [base] if tag is None else tag + [base]
 
         d = {'title': title, 'memo': memo, 'tags': tag, 'created': created}
