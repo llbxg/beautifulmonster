@@ -1,9 +1,11 @@
 from datetime import datetime as _datetime
 from distutils.util import strtobool as _strtobool
 from hashlib import md5 as _md5
-from os.path import splitext as _splitext, basename as _basename
-from os import environ as _environ
+from os.path import (splitext as _splitext, basename as _basename,
+                     getctime as _getctime)
+from os import environ as _environ, stat as _stat
 from pathlib import Path as _Path
+import platform as _platform
 import re as _re
 
 from bs4 import BeautifulSoup as _BeautifulSoup
@@ -53,12 +55,39 @@ def separate_yamlblock_contents(txt):
     return yamlblock, contents
 
 
+def get_date(string):
+    p_y = r'(?P<year>[12]\d{3})\D+'
+    p_m = r'(?P<month>(0?[1-9]|1[0-2]))\D+'
+    p_d = r'(?P<day>(0?[1-9]|1[0-9]|2[0-9]|3[01]))\D*'
+    pattern = rf'\D*{p_y}{p_m}{p_d}'
+    prog = _re.compile(pattern)
+
+    result = prog.match(string)
+    if result:
+        year = result.group('year')
+        month = result.group('month')
+        date = result.group('day')
+        return (year, month, date)
+    else:
+        return None
+
+
+def get_time(string):
+    p_h = r'(?P<hour>0?[0-9]|1[0-9]|2[0-3])'
+    p_m = r'(?P<minute>[0-5][0-9])'
+    pattern = rf'.*\s{p_h}\D+{p_m}$'
+    prog2 = _re.compile(pattern)
+
+    result = prog2.match(string)
+    if result:
+        hour = result.group('hour')
+        minute = result.group('minute')
+        return (hour, minute)
+    else:
+        return None
+
+
 def str_2_datetime(string):
-    """
-    strをdatetimeへ変換する。
-    課題
-      - 変換次のエラー処理
-    """
     if string is None:
         return None
 
@@ -66,19 +95,18 @@ def str_2_datetime(string):
         return string
 
     elif isinstance(string, str):
-        p_y = r'(?P<year>[12]\d{3})\D+'
-        p_m = r'(?P<month>(0?[1-9]|1[0-2]))\D+'
-        p_d = r'(?P<day>(0?[1-9]|1[0-9]|2[0-9]|3[01]))\D*'
-        pattern = rf'\D*{p_y}{p_m}{p_d}$'
-        prog = _re.compile(pattern)
+        date = get_date(string)
 
-        result = prog.match(string)
-        if result:
-            year = result.group('year')
-            month = result.group('month')
-            date = result.group('day')
-            tdatetime = _datetime.strptime(
-                f'{year}-{month:0>2}-{date:0>2} 00:00:00', '%Y-%m-%d %H:%M:%S')
+        if date is not None:
+            str_datetime = f'{date[0]}-{date[1]:0>2}-{date[2]:0>2}'
+
+            time = get_time(string)
+            if time is not None:
+                str_datetime += f'+{time[0]:0>2}:{time[1]:0>2}:00'
+            else:
+                str_datetime += '+00:00:00'
+
+            tdatetime = _datetime.strptime(str_datetime, '%Y-%m-%d+%H:%M:%S')
             return tdatetime
 
     return None
