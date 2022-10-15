@@ -44,6 +44,12 @@ class Pot(object):
     def pour(self):
         return _Markup(str(self.soup))
 
+    def first_h1(self):
+        title = self.soup.find('h1')
+        if title is not None:
+            title = title.text
+        return title
+
     def custom_toc(self):
         logger.debug('use self.custom_toc')
         toc = self.soup.find("div", attrs={'class': "toc"})
