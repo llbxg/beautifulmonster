@@ -21,6 +21,7 @@ class Monster(object):
 
         self.yamlblock, self.contents = _s_y_c(self.text)
         self.hash2 = _make_hash(self.contents)
+        self.soup = _Pot(self.contents)
 
         self.config = {}
         self.hash = 'no yamlblock'
@@ -30,10 +31,14 @@ class Monster(object):
 
         self.path = _make_path(path)
 
+        title = self.soup.first_h1()
+        if title is None:
+            title = self.path[1:-1]
+
         created = self.config.get('created', _get_created(path))
 
         self.love = _Love(self.path,
-                          self.config.get('title', 'no title'),
+                          self.config.get('title', title),
                           self.config.get('created', created),
                           self.config.get('rewrote', None),
                           self.hash, self.hash2)
@@ -43,8 +48,6 @@ class Monster(object):
             tags = [tags]
 
         self.love.tags = [_Blue(self.path, tag) for tag in tags]
-
-        self.soup = _Pot(self.contents)
 
     @property
     def html(self):
