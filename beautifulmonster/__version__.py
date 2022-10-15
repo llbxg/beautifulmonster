@@ -1,5 +1,5 @@
 MAJOR = 0
 MINOR = 0
-PATCH = 26
+PATCH = 27
 
 __version__ = f'{MAJOR}.{MINOR}.{PATCH}'

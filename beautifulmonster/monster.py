@@ -4,7 +4,8 @@ from .ohh import Blue as _Blue, Love as _Love
 from .stew import Pot as _Pot
 from .utils import (make_hash as _make_hash, make_path as _make_path,
                     read_txt as _read_txt,
-                    separate_yamlblock_contents as _s_y_c,)
+                    separate_yamlblock_contents as _s_y_c,
+                    get_created as _get_created)
 
 
 from markupsafe import Markup as _Markup
@@ -29,9 +30,11 @@ class Monster(object):
 
         self.path = _make_path(path)
 
+        created = self.config.get('created', _get_created(path))
+
         self.love = _Love(self.path,
                           self.config.get('title', 'no title'),
-                          self.config.get('created', 'no created'),
+                          self.config.get('created', created),
                           self.config.get('rewrote', None),
                           self.hash, self.hash2)
 

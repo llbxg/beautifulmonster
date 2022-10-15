@@ -168,3 +168,25 @@ def get_title_tag_string(response):
         title = title_tag.string
 
     return title
+
+
+def get_created(path):
+
+    file = _Path(path)
+    if not file.exists():
+        return None
+
+    p = _platform.system()
+    if p == 'Windows':
+        created = _getctime(path)
+    else:
+        stat = _stat(path)
+        try:
+            created = stat.st_birthtime
+        except AttributeError:
+            created = None
+
+    if created is not None:
+        created = _datetime.fromtimestamp(created)
+
+    return created
