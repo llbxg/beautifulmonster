@@ -65,7 +65,8 @@ def building2(config):
         path = _join(config.path_contents_dir, cat, '*.md')
         for file in _glob(path):
             logger.debug(f"Deal w/ {file}")
-            monster = _Monster(file)
+            auto_rewrote = v.get('auto_rewrote', None)
+            monster = _Monster(file, auto_rewrote=auto_rewrote)
             m = session.query(_Love).filter_by(path=monster.path).first()
             content = _wakatigaki(monster.contents)
             path_list.append(monster.path)

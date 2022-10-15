@@ -142,11 +142,8 @@ def debug_mode():
     return bool(debug)
 
 
-def get_update_date(path, format="{0:%Y-%m-%d}"):
-    p = _Path(path)
-    dt = _datetime.fromtimestamp(p.stat().st_mtime)
-    dt = format.format(dt)
-    return dt
+def get_update_date(path, format="{0:%Y-%m-%d %H:%M:%S}"):
+    return format.format(get_rewrote(path))
 
 
 def get_base_path(path):
@@ -168,6 +165,12 @@ def get_title_tag_string(response):
         title = title_tag.string
 
     return title
+
+
+def get_rewrote(path):
+    p = _Path(path)
+    rewrote = _datetime.fromtimestamp(p.stat().st_mtime)
+    return rewrote
 
 
 def get_created(path):
