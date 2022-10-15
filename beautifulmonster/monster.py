@@ -37,6 +37,8 @@ class Monster(object):
         title = self.soup.first_h1()
         if title is None:
             title = self.path[1:-1]
+        for v in ['title', 'alias']:
+            title = self.config.get(v, title)
 
         created = (self.config.get('created', _get_created(path)))
         created = _str_2_datetime(created)
@@ -48,8 +50,7 @@ class Monster(object):
             if (created is not None) and ((rewrote - created) < delta):
                 rewrote = None
 
-        self.love = _Love(self.path,
-                          self.config.get('title', title),
+        self.love = _Love(self.path, title,
                           self.config.get('created', created),
                           self.config.get('rewrote', rewrote),
                           self.hash, self.hash2)
