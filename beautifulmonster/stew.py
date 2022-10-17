@@ -28,9 +28,9 @@ class Pot(object):
     課題
     - TOCはたぶんここで作るはず。
     """
-    def __init__(self, contents, toc=True):
+    def __init__(self, contents, toc=2):
         extensions = ['extra', 'attr_list', 'nl2br', 'tables',
-                      _TocExtension(baselevel=1, toc_depth=2),
+                      _TocExtension(baselevel=1, toc_depth=toc),
                       _Wiki(base_url='/', end_url='/')]
         html_string = _markdown(contents, extensions=extensions)
         self.soup = _BeautifulSoup(html_string, "html.parser")
@@ -58,6 +58,12 @@ class Pot(object):
             toc['id'] = 'toc'
             if (ul := toc.find('ul')) is not None and isinstance(ul, _Tag):
                 ul.name = 'ol'
+
+            ol = toc.ol
+            if ol is not None:
+                li_content = ol.find_all('ul')
+                for li in li_content:
+                    li.name = 'ol'
 
     def m_code(self):
         """

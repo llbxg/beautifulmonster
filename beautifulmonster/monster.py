@@ -19,12 +19,12 @@ class Monster(object):
     Monsterはtemplateへ情報を提供する。Loveを通してdbとデータを共有する。
     """
 
-    def __init__(self, path, auto_rewrote=None):
+    def __init__(self, path, auto_rewrote=None, toc_depth=2):
         self.text = _read_txt(path)
 
         self.yamlblock, self.contents = _s_y_c(self.text)
         self.hash2 = _make_hash(self.contents)
-        self.soup = _Pot(self.contents)
+        self.soup = _Pot(self.contents, toc=toc_depth)
 
         self.config = {}
         self.hash = 'no yamlblock'

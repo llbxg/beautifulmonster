@@ -103,12 +103,17 @@ def make_app(category_boolean_items=None):
         def temp_fucn(_id, cat, v):
             session = make_session(config.url)
             path = _join(config.path_contents_dir, cat, f'{_id}.md')
-            monster = Monster(path)
 
             kwargs = {}
             bool_laglead = False
 
-            if v is not None:
+            if v is None:
+                monster = Monster(path)
+            else:
+                auto_rewrote = v.get('auto_rewrote', None)
+                toc = v.get('toc_depth', 2)
+                monster = Monster(path,
+                                  auto_rewrote=auto_rewrote, toc_depth=toc)
                 if category_boolean_items is not None:
                     for item in category_boolean_items:
                         if v.get(item, False):
