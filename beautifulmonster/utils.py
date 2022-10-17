@@ -58,8 +58,8 @@ def separate_yamlblock_contents(txt):
 def get_date(string):
     p_y = r'(?P<year>[12]\d{3})\D+'
     p_m = r'(?P<month>(0?[1-9]|1[0-2]))\D+'
-    p_d = r'(?P<day>(0?[1-9]|1[0-9]|2[0-9]|3[01]))\D*'
-    pattern = rf'\D*{p_y}{p_m}{p_d}'
+    p_d = r'(?P<day>(0?[1-9]|1[0-9]|2[0-9]|3[01]))'
+    pattern = rf'\D*{p_y}{p_m}{p_d}(\D|$)'
     prog = _re.compile(pattern)
 
     result = prog.match(string)
@@ -95,12 +95,14 @@ def str_2_datetime(string):
         return string
 
     elif isinstance(string, str):
+        print(string)
         date = get_date(string)
-
+        print(date)
         if date is not None:
             str_datetime = f'{date[0]}-{date[1]:0>2}-{date[2]:0>2}'
 
             time = get_time(string)
+            print(time)
             if time is not None:
                 str_datetime += f'+{time[0]:0>2}:{time[1]:0>2}:00'
             else:

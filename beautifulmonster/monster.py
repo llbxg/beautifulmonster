@@ -40,7 +40,7 @@ class Monster(object):
         for v in ['title', 'alias']:
             title = self.config.get(v, title)
 
-        created = (self.config.get('created', _get_created(path)))
+        created = self.config.get('created', _get_created(path))
         created = _str_2_datetime(created)
 
         rewrote = None
