@@ -8,6 +8,7 @@ from sqlalchemy import create_engine as _create_engine, and_ as _and_
 from sqlalchemy.orm import (scoped_session as _scoped_session,
                             sessionmaker as _sessionmaker)
 
+from .cach3 import mk_cache_dic as _mk_cache_dic
 from .monster import Monster as _Monster
 from .ohh import Base as _Base, Love as _Love, Blue as _Blue
 from .puzzle import make_template as _make_template, url_2_md as _url_2_md
@@ -33,6 +34,8 @@ def _wrapper_create_engine(url):
 
 
 def building2(config):
+    _mk_cache_dic(config.cache)
+
     template_file = config.template_file
     if not _exists(template_file):
         _makedirs(config.template_folder, exist_ok=True)

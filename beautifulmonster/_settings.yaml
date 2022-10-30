@@ -14,6 +14,9 @@ CONFIG:
   PATH_SCSS: scss
   PATH_CSS: css
 
+  PATH_CACHE: cache
+  PATH_CACHE_DEFAULT: .cache
+
   DB: db
   DB_URL: url
   DB_URL_DEFAULT: 'sqlite:///test.db'
