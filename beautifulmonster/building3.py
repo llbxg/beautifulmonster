@@ -1,15 +1,13 @@
 from glob import glob as _glob
 from logging import getLogger as _getLogger
-from os.path import join as _join, exists as _exists
-from os import makedirs as _makedirs
-
-import sass as _sass
+from os.path import join as _join
 from sqlalchemy import create_engine as _create_engine, and_ as _and_
 from sqlalchemy.orm import (scoped_session as _scoped_session,
                             sessionmaker as _sessionmaker)
 
 from .cach3 import (mk_cache_dic as _mk_cache_dic,
-                    make_template_in_templates as _mtit)
+                    make_template_in_templates as _mtit,
+                    compile_scss as _compile_scss)
 from .monster import Monster as _Monster
 from .ohh import Base as _Base, Love as _Love, Blue as _Blue
 from .puzzle import url_2_md as _url_2_md
@@ -39,12 +37,7 @@ def building2(config):
 
     _mtit(config.template_file, config.template_folder)
 
-    path_scss, path_css = config.scss_css
-    if not _exists(path_scss):
-        _makedirs(path_scss, exist_ok=True)
-        logger.debug(f"makedirs({path_scss})")
-    _sass.compile(dirname=(path_scss, path_css))
-    logger.info(f"compiled scss {_glob(path_scss+'/*.scss')}")
+    _compile_scss(config.cache, *config.scss_css)
 
     if not _debug_mode():
         return 0
