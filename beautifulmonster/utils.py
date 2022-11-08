@@ -95,14 +95,11 @@ def str_2_datetime(string):
         return string
 
     elif isinstance(string, str):
-        print(string)
         date = get_date(string)
-        print(date)
         if date is not None:
             str_datetime = f'{date[0]}-{date[1]:0>2}-{date[2]:0>2}'
 
             time = get_time(string)
-            print(time)
             if time is not None:
                 str_datetime += f'+{time[0]:0>2}:{time[1]:0>2}:00'
             else:
