@@ -9,7 +9,7 @@ from markdown.extensions.wikilinks import (
 from markupsafe import Markup as _Markup
 
 
-logger = _getLogger(__name__)
+_logger = _getLogger(__name__)
 
 
 class _Wiki(_WikiLink):
@@ -24,10 +24,9 @@ class _Wiki(_WikiLink):
 
 class Pot(object):
     """
-    markdown形式をhtmlに変換する。
-    課題
-    - TOCはたぶんここで作るはず。
+    markdown -> html
     """
+
     def __init__(self, contents, toc=2):
         extensions = ['extra', 'attr_list', 'nl2br', 'tables',
                       _TocExtension(baselevel=1, toc_depth=toc),
@@ -51,7 +50,6 @@ class Pot(object):
         return title
 
     def custom_toc(self):
-        logger.debug('use self.custom_toc')
         toc = self.soup.find("div", attrs={'class': "toc"})
 
         if toc is not None and isinstance(toc, _Tag):
@@ -96,7 +94,6 @@ class Pot(object):
             pre['class'] = f'prettyprint {lang}'
 
             for code in codes:
-                logger.debug(f'{type(code)}')
                 code['class'] = 'in-pre'
 
     def get_doc(self):

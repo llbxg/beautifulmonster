@@ -1,147 +1,113 @@
-from dataclasses import dataclass as _dataclass, field as _field
 from logging import getLogger as _getLogger
-from os import getcwd as _getcwd
-from os.path import join as _join, dirname as _dirname, exists as _exists
-from os import makedirs as _makedirs
+from pathlib import Path as _Path
 
-from jinja2 import (Environment as _Environment,
-                    FileSystemLoader as _FileSystemLoader)
+
 import yaml as _yaml
 
 
 _logger = _getLogger(__name__)
 
 
-PATH_SETTINGS = _join(_dirname(__file__), '_settings.yaml')
-
-with open(PATH_SETTINGS) as f:
-    YAML_SETTINGS = _yaml.safe_load(f)
-SETTINGS_4_JINJA2 = YAML_SETTINGS['jinja2']
-
-path_templates_jinja2 = _join(
-    _dirname(__file__), SETTINGS_4_JINJA2['DIR_TEMPLATES'])
-env = _Environment(loader=_FileSystemLoader(path_templates_jinja2))
-
-CONFIG = YAML_SETTINGS['CONFIG']
-CONFIG_OGP = YAML_SETTINGS['OGP']
-
-
-@_dataclass
-class OGP(object):
-    images: str = ''
-    descriptions: dict = _field(default_factory=dict)
-
-    @property
-    def desc_error(self):
-        desc_error = CONFIG_OGP['DESCRIPTION_ERROR']
-        desc_error_default = CONFIG_OGP['DESCRIPTION_ERROR_DEFAULT']
-        return self.descriptions.get(desc_error, desc_error_default)
-
-
 class Config(object):
-    def __init__(self):
-        self.path_directory = _getcwd()
-
-        self.y = self._get_config()
-
-        self._check_category()
-
-        self.ogp = self._make_ogp()
-
-    def _get_config(self):
-        path = _join(self.path_directory, CONFIG['PATH_CONFIG'])
-        try:
-            with open(path) as f:
-                y = _yaml.safe_load(f)
-
-        except Exception as e:
-            _logger.error(f"Can't open {path}. \n{e}")
-            y = {}
-        return y
-
-    def _make_ogp(self):
-        ogp = self.y.get('ogp', {})
-        image = ogp.get(CONFIG_OGP['IMAGE'], '')
-        description = ogp.get(CONFIG_OGP['DESCRIPTION'], {})
-        return OGP(image, description)
+    def __init__(self, p_obj_d_parent):
+        self.y = self._get_config(p_obj_d_parent / "config.yaml")
+        self.p_obj_d_parent = p_obj_d_parent
 
     @property
-    def template_folder(self):
-        path = CONFIG['DIR_TEMPLATE']
-        template_dir = self.y.get(path, CONFIG['DIR_TEMPLATE_DEFAULT'])
-        return self._join_w_cwd(template_dir)
+    def p_obj_d_template(self):
+        return self.p_obj_d_parent / self.y.get('templates', 'templates')
 
     @property
-    def template_file(self):
-        return _join(self.template_folder, CONFIG['TEMPLATE_FILE_DEFAULT'])
+    def p_obj_main_template(self):
+        return _Path(self.y.get('main_template', 'template.html'))
 
     @property
-    def path_contents(self):
-        return self.y.get(CONFIG['PATH_DIR'], CONFIG['PATH_DIR_DEFAULT'])
-
-    @property
-    def path_contents_dir(self):
-        return _join(self.path_directory, self.path_contents)
-
-    @property
-    def static(self):
-        return self.y.get(CONFIG['PATH_STATIC'], CONFIG['PATH_STATIC_DEFAULT'])
-
-    @property
-    def static_dir(self):
-        return _join(self.path_directory, self.static)
+    def p_obj_template(self):
+        return self.p_obj_d_template / self.p_obj_main_template
 
     @property
     def security_headers(self):
-        return self.y.get(CONFIG['SECURITY_HEADERS'], {})
+        return self.y.get('security_headers', {})
 
     @property
-    def category(self):
-        return self.y.get(CONFIG['CATEGORY'], {})
-
-    @property
-    def fonts(self):
-        return self.y.get(CONFIG['FONTS'], {})
-
-    @property
-    def path_favicon(self):
-        return _join('favicon.ico')
+    def p_obj_cache(self):
+        return self.p_obj_d_parent / self.y.get('cache', '.cache')
 
     @property
     def url(self):
-        db = self.y.get(CONFIG['DB'], None)
-        url = CONFIG['DB_URL_DEFAULT']
+        db = self.y.get('db', {})
+        return db.get('db_url', 'sqlite:///test.db')
 
-        if db is not None:
-            url = db.get(CONFIG['DB_URL']) or url
+    @property
+    def contents(self):
+        return self.y.get('contents_directory', 'contents')
 
-        return url
+    @property
+    def p_obj_d_contents(self):
+        return self.p_obj_d_parent / self.contents
+
+    @property
+    def category(self):
+        return self.y.get('category', dict())
+
+    @property
+    def ogp(self):
+        return self.y.get('ogp', dict())
 
     @property
     def site_name(self):
-        return self.y.get(CONFIG['SITE_NAME'], CONFIG['SITE_NAME_DEFAULT'])
+        return self.y.get('site_name', "not set site_name")
 
     @property
     def base_url(self):
-        return self.y.get(CONFIG['BASE_URL'], CONFIG['BASE_URL_DEFAULT'])
+        return self.y.get('base_url', "/")
 
     @property
-    def dir_index(self):
-        return self.y.get(CONFIG['DIR_INDEX'], CONFIG['DIR_INDEX_DEFAULT'])
+    def p_obj_static(self):
+        return self.y.get('static', 'static')
 
     @property
-    def scss_css(self):
-        path_css = _join(self.static, self.y.get(CONFIG['PATH_CSS'], ''))
-        path_scss = _join(self.static, self.y.get(CONFIG['PATH_SCSS'], ''))
-        return (path_scss, path_css)
+    def p_obj_d_static(self):
+        return self.p_obj_d_parent / self.p_obj_static
 
-    def _join_w_cwd(self, path):
-        return _join(self.path_directory, path)
+    @property
+    def p_obj_d_scss(self):
+        return self.p_obj_d_static / self.y.get('scss_directory', 'scss')
 
-    def _check_category(self):
-        _logger.debug(self.category)
-        for c in self.category:
-            path = _join(self.path_directory, self.path_contents, c)
-            _logger.debug(path)
-            if not _exists(path):
-                _makedirs(path)
+    @property
+    def p_obj_d_css(self):
+        return self.p_obj_d_static / self.y.get('css_directory', 'css')
+
+    @property
+    def p_obj_d_index(self):
+        return self.p_obj_d_parent / self.y.get('index_directory', 'index')
+
+    @property
+    def list_ext(self):
+        list_ext = self.y.get('static_ext_ok', ['jpg', 'png', 'jpeg', 'css'])
+        if isinstance(list_ext, list):
+            return list_ext
+
+        elif isinstance(list_ext, str):
+            return [list_ext]
+
+        else:
+            return []
+
+    @property
+    def favicon(self):
+        return "favicon.ico"
+
+    @property
+    def font(self):
+        return self.y.get("font", {})
+
+    def _get_config(self, p_obj_config):
+        try:
+            with p_obj_config.open() as f:
+                y = _yaml.safe_load(f)
+
+        except Exception as e:
+            _logger.warning(f"Can't open {p_obj_config}. \n{e}")
+            y = {}
+        return y

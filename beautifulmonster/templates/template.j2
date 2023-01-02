@@ -1,48 +1,31 @@
 <!DOCTYPE html>
 <html>
 
-
-<head prefix="og: http://ogp.me/ns# fb: http://ogp.me/ns/fb# website: http://ogp.me/ns/website#">
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0,maximum-scale=1.0">
-
-    <!-- 🐩 [start]: insert fonts by beautiful monster -->
-    {{ fonts }}
-    <!-- 🐩 [end]: insert fonts by beautiful monster -->
-
-    <!-- 🐩 [start]: insert icons by beautiful monster -->
-    {{ icons }}
-    <!-- 🐩 [end]: insert icons by beautiful monster -->
-
-    <!-- 🐩 [start]: insert ogp by beautiful monster -->
-    {{ ogp }}
-    <!-- 🐩 [end]: insert ogp by beautiful monster -->
-</head>
-
-
-<body>
-
-    <header><a href="/">beautiful monster</a></header>
-
-    <main>
-    {% if category == 'home' %}
-        <h2>Latest</h2>
-
-        {% for love in loves%}
-        <div><a href="{{love.path}}">{{love.title}}</a></div>
-        {% endfor %}
-
-        <h2>Tag</h2>
+    <head prefix="og: http://ogp.me/ns# fb: http://ogp.me/ns/fb# website: http://ogp.me/ns/website#">
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0,maximum-scale=1.0">
         
-        {% for tag in tags %}
-        <div><a href="/tag/{{tag}}/">{{tag}}</a></div>
-        {% endfor %}
-    {% endif %}
-    </main>
+        <!-- 🐩 [start]: insert fonts by beautiful monster -->
+        {{ fonts }}
+        <!-- 🐩 [end]: insert fonts by beautiful monster -->
 
-    <footer>powered by beautiful monster</footer>
+        <!-- 🐩 [start]: insert icons by beautiful monster -->
+        {{ icons }}
+        <!-- 🐩 [end]: insert icons by beautiful monster -->
 
-</body>
+        <!-- 🐩 [start]: insert ogp by beautiful monster -->
+        {{ ogp }}
+        <!-- 🐩 [end]: insert ogp by beautiful monster -->
+    </head>
+
+    <body>
+
+        <header></header>
+        <main>
+        </main>
+        <footer>powered by beautiful monster</footer>
+
+    </body>
 
 
 </html>

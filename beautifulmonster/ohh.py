@@ -5,10 +5,6 @@ from sqlalchemy.schema import Column as _Column, ForeignKey as _ForeignKey
 from sqlalchemy.sql import func as _func
 from sqlalchemy.types import (DateTime as _DateTime,
                               Integer as _Integer, String as _String)
-
-from .utils import str_2_datetime as _str_2_datetime
-
-
 Base = _declarative_base()
 
 
@@ -18,41 +14,40 @@ class Love(Base):
     path = _Column(_String, primary_key=True)
     title = _Column(_String, nullable=False)
     created = _Column(_DateTime)
-    rewrote = _Column(_DateTime)
-    hash = _Column(_String, nullable=False)
-    hash2 = _Column(_String, nullable=False)
-
-    def __init__(self, path, title, created, rewrote, hash, hash2):
-        self.set_all(path, title, created, rewrote, hash, hash2)
+    updated = _Column(_DateTime)
 
     def __repr__(self):
-        members = f'{self.path}, {self.title}, '\
-                  + f'{self.created}, {self.rewrote},'\
-                  + f'{self.hash}, {self.hash2}'
-        return f'Love({members})'
+        s = [f"{k}={v}" for k, v in self.__dict__.items() if k[0] != "_"]
+        return f"Love({', '.join(s)})"
+
+    @classmethod
+    def make(cls, path, title, created, updated):
+        love = cls()
+        love.path = path
+        love.title = title
+        love.created = created
+        love.updated = updated
+        return love
+
+    def update(self, love):
+        self.title = love.title
+        self.created = love.created
+        self.updated = love.updated
+
+    def tuple(self):
+        return (self.path, self.title, self.created, self.updated)
 
     def to_dict(self):
-        return {'path': self.path, 'title': self.title, 'date': self.date,
-                'tags': [tag.tag for tag in self.tags]}
+        created, updated = None, None
+        if self.created is not None:
+            created = self.created.strftime('%Y-%m-%d')
+        if self.updated is not None:
+            updated = self.updated.strftime('%Y-%m-%d')
 
-    def to_tuple(self):
-        return (self.path, self.title,
-                self.created, self.rewrote, self.hash, self.hash2)
-
-    @property
-    def date(self):
-        d = self.rewrote or self.created
-        if d is not None:
-            return d.strftime('%Y-%m-%d')
-        return None
-
-    def set_all(self, path, title, created, rewrote, hash, hash2):
-        self.path = path
-        self.title = title
-        self.created = _str_2_datetime(created)
-        self.rewrote = _str_2_datetime(rewrote)
-        self.hash = hash
-        self.hash2 = hash2
+        path = "/" + self.path.split('.')[0]
+        print(path)
+        return {'path': path, 'title': self.title, 'created': created,
+                'updated': updated, 'tags': [tag.tag for tag in self.tags]}
 
 
 class Blue(Base):
@@ -71,7 +66,11 @@ class Blue(Base):
         self.tag = tag
 
     def __repr__(self):
-        return f'Blue({self.id}, {self.love_path}, {self.tag})'
+        return f"Blue({self.love_path}, {self.tag})"
+
+    @property
+    def path(self):
+        return self.love_path
 
 
 def _lead_or_lag(sess, path, less_than=True):
