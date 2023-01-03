@@ -169,6 +169,13 @@ def make_app(p_obj_d_parent=_default_p_obj_config,
         session.close()
         return r
 
+    @app.route('/api/loves/countall/')
+    def api_loves_countall():
+        session = make_session(config.url)
+        c = session.query(Love).count()
+        session.close()
+        return _jsonify({"count": c})
+
     @app.route('/api/tag/<tag>')
     def apt_tags(tag):
         session = make_session(config.url)
