@@ -45,7 +45,6 @@ class Love(Base):
             updated = self.updated.strftime('%Y-%m-%d')
 
         path = "/" + self.path.split('.')[0]
-        print(path)
         return {'path': path, 'title': self.title, 'created': created,
                 'updated': updated, 'tags': [tag.tag for tag in self.tags]}
 
