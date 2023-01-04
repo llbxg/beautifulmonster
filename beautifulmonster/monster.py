@@ -101,7 +101,10 @@ def create_head(str_header):
     title = yaml_header.get('title', None)
     created = _s2d(yaml_header.get('created', None))
     updated = _s2d(yaml_header.get('updated', None))
+
     tag = yaml_header.get('tag', [])
+    if isinstance(tag, str):
+        tag = [tag]
 
     return Head(title, created, updated, tag)
 
