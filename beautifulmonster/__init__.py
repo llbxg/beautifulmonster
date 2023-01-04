@@ -202,6 +202,13 @@ def make_app(p_obj_d_parent=_default_p_obj_config,
         session.close()
         return r
 
+    @app.route('/api/tag/all/')
+    def api_tag_all():
+        session = make_session(config.url)
+        tag_all = set([tag.tag for tag in session.query(Blue).all()])
+        session.close()
+        return _jsonify({"tag": list(tag_all)})
+
     @app.route('/api/search')
     def api_search():
         if not config.p_obj_d_index.exists():
