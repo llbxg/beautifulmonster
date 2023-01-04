@@ -50,7 +50,7 @@ def make_app(p_obj_d_parent=_default_p_obj_config,
     config = Config(p_obj_d_parent)
 
     session = make_session(config.url)
-    building2(session, p_obj_d_parent, config)
+    building2(session, config)
     session.close()
     compile_scss(config.p_obj_d_scss, config.p_obj_d_css, config.p_obj_cache)
 

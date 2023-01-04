@@ -45,8 +45,8 @@ def get_delete_loves(db_loves, p_obj_glob):
     return loves - exist
 
 
-def building2(session, pobj_d_sample, config):
-    p_obj_d = pobj_d_sample/config.contents
+def building2(session, config):
+    p_obj_d = config.p_obj_d_contents
 
     p_obj_cache = config.p_obj_cache
     status = []
