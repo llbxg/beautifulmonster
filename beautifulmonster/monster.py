@@ -29,7 +29,7 @@ class Monster(_NamedTuple):
     head: _Union[Head, None]
     body: str
 
-    def extract_love(self, p_obj_d_contents=None, updated_automatically=True):
+    def extract_love(self, st_mtime=None):
         path = self.name
         head = self.head
         if head is None:
@@ -39,16 +39,11 @@ class Monster(_NamedTuple):
         created = head.created
         updated = head.updated
 
-        if p_obj_d_contents is None:
+        if st_mtime is None:
             return _Love.make(path, title, created, updated)
 
-        p_obj = p_obj_d_contents / self.name
-        st_mtime = _datetime.fromtimestamp(p_obj.stat().st_mtime)
         if created is None:
             created = st_mtime
-            updated = None
-        elif updated_automatically and updated is None:
-            updated = st_mtime
 
         return _Love.make(path, title, created, updated)
 

@@ -13,9 +13,6 @@ PATH_CACHE = PATH_CWD
 
 
 def get_cache(p_obj_cache, key):
-    if not p_obj_cache.exists():
-        return None
-
     try:
         with _shelve.open(str(p_obj_cache)) as c:
             cache_updated = c.get(key, None)

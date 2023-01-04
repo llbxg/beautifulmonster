@@ -29,10 +29,12 @@ class Love(Base):
         love.updated = updated
         return love
 
-    def update(self, love):
+    def update(self, love, st_mtime, first=True):
         self.title = love.title
-        self.created = love.created
-        self.updated = love.updated
+        if self.created is None:
+            self.created = st_mtime
+        elif first:
+            self.updated = st_mtime
 
     def tuple(self):
         return (self.path, self.title, self.created, self.updated)

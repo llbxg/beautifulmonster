@@ -1,4 +1,5 @@
 from collections import Counter
+from datetime import datetime as _datetime
 from pathlib import Path as _Path
 import sass as _sass
 from sqlalchemy import create_engine as _create_engine, and_ as _and_
@@ -45,14 +46,20 @@ def get_delete_loves(db_loves, p_obj_glob):
 
 
 def building2(session, pobj_d_sample, config):
+    p_obj_d = pobj_d_sample/config.contents
+
     p_obj_cache = config.p_obj_cache
     status = []
 
     cache_updated = _get_files_cache(p_obj_cache)
 
-    for r in _new_files(cache_updated, pobj_d_sample):
+    for r in _new_files(cache_updated, p_obj_d):
         monster = _create_monster(r)
-        love = monster.extract_love(config.p_obj_d_contents)
+
+        p_obj = config.p_obj_d_contents / monster.name
+        st_mtime = _datetime.fromtimestamp(p_obj.stat().st_mtime)
+
+        love = monster.extract_love(st_mtime=st_mtime)
         if love is None:  # yamlによる情報がない場合。
             continue
 
@@ -67,7 +74,7 @@ def building2(session, pobj_d_sample, config):
 
         # 更新
         else:
-            love_old.update(love)
+            love_old.update(love, st_mtime, bool(cache_updated))
             tag_update(session, love.path, monster.tags)
             session.commit()
 
@@ -77,7 +84,7 @@ def building2(session, pobj_d_sample, config):
 
     # 存在しないファイルをdbから削除
     loves_delete_set = get_delete_loves(session.query(_Love).all(),
-                                        pobj_d_sample.glob("**/*.md"))
+                                        p_obj_d.glob("**/*.md"))
     for path in loves_delete_set:
         love = session.query(_Love).filter(_Love.path == path).first()
         session.delete(love)
