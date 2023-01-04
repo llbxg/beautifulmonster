@@ -35,6 +35,16 @@ def loves_list_2_json(loves_list):
     return r
 
 
+def debug_run(app, p_obj_d_parent, *args, **kwargs):
+    config = Config(p_obj_d_parent)
+
+    extra_files = []
+    extra_files.extend(config.p_obj_d_scss.glob("**/*.scss"))
+    extra_files.extend(config.p_obj_d_contents.glob("**/*.md"))
+
+    app.run(extra_files=extra_files, *args, **kwargs)
+
+
 def make_app(p_obj_d_parent=_default_p_obj_config,
              s_icons=True, s_fonts=False):
     config = Config(p_obj_d_parent)
