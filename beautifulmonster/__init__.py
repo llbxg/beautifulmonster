@@ -27,6 +27,9 @@ _default_p_obj_config = _Path().cwd()
 DEBUG = bool(_strtobool(_environ.get('BM_DEBUG', 'False')))
 _environ['FLASK_DEBUG'] = 'True' if DEBUG else 'False'
 
+if DEBUG:
+    from .need import build_for_search
+
 
 def loves_list_2_json(loves_list):
     loves = _json.dumps(
@@ -46,16 +49,18 @@ def debug_run(app, p_obj_d_parent, *args, **kwargs):
 
 
 def make_app(p_obj_d_parent=_default_p_obj_config,
-             s_icons=True, s_fonts=False):
+             s_icons=True, s_fonts=False, build=False):
     config = Config(p_obj_d_parent)
 
-    session = make_session(config.url)
-    building2(session, config)
-    session.close()
-    compile_scss(config.p_obj_d_scss, config.p_obj_d_css, config.p_obj_cache)
+    if DEBUG or build:
+        session = make_session(config.url)
+        building2(session, config)
+        session.close()
+
+        compile_scss(config.p_obj_d_scss, config.p_obj_d_css,
+                     config.p_obj_cache)
 
     if DEBUG:
-        from .need import build_for_search
         build_for_search(p_obj_d_parent, config.p_obj_d_index)
 
     make_template(config.p_obj_template)
