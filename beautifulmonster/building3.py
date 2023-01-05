@@ -1,20 +1,106 @@
-from glob import glob as _glob
-from logging import getLogger as _getLogger
-from os.path import join as _join, exists as _exists
-from os import makedirs as _makedirs
-
+from collections import Counter
+from datetime import datetime as _datetime
+from pathlib import Path as _Path
 import sass as _sass
 from sqlalchemy import create_engine as _create_engine, and_ as _and_
 from sqlalchemy.orm import (scoped_session as _scoped_session,
                             sessionmaker as _sessionmaker)
 
-from .monster import Monster as _Monster
+
+from .cach3 import (check_updated as _check_updated,
+                    get_files_cache as _get_files_cache,
+                    update_files_cache as _update_files_cache,
+                    update_scss_cache as _update_scss_cache,
+                    new_files as _new_files, get_scss_cache as _get_scss_cache)
+from .monster import create_monster as _create_monster
 from .ohh import Base as _Base, Love as _Love, Blue as _Blue
-from .puzzle import make_template as _make_template, url_2_md as _url_2_md
-from .utils import debug_mode as _debug_mode
 
 
-logger = _getLogger(__name__)
+def add_love_and_tags(session, love, tags):
+    session.add(love)
+    for tag in tags:
+        session.add(_Blue(love.path, tag))
+
+
+def tag_update(session, love_path, tags):
+    cond = _Blue.love_path == love_path
+    blues_old = session.query(_Blue).filter(cond).all()
+    blues_old = {blue.tag for blue in blues_old}
+    blues_new = {tag for tag in tags}
+
+    blues_update = blues_new - blues_old
+    blues_delete = blues_old - blues_new
+
+    for tag in blues_update:
+        session.add(_Blue(love_path, tag))
+    cond_2 = _Blue.tag.in_(blues_delete)
+    for blue in session.query(_Blue).filter(_and_(cond, cond_2)).all():
+        session.delete(blue)
+
+
+def get_delete_loves(db_loves, p_obj_glob):
+    loves = {love.path for love in db_loves}
+    exist = {str(_Path(*p.relative_to(p.cwd()).parts[1:])) for p in p_obj_glob}
+
+    return loves - exist
+
+
+def building2(session, config):
+    p_obj_d = config.p_obj_d_contents
+
+    p_obj_cache = config.p_obj_cache
+    status = []
+
+    cache_updated = _get_files_cache(p_obj_cache)
+
+    for r in _new_files(cache_updated, p_obj_d):
+        monster = _create_monster(r)
+
+        p_obj = config.p_obj_d_contents / monster.name
+        st_mtime = _datetime.fromtimestamp(p_obj.stat().st_mtime)
+
+        love = monster.extract_love(st_mtime=st_mtime)
+        if love is None:  # yamlによる情報がない場合。
+            continue
+
+        love_old = session.query(_Love).filter(_Love.path == love.path).first()
+
+        # 新規登録
+        if love_old is None:
+            add_love_and_tags(session, love, monster.tags)
+            session.commit()
+
+            status.extend("1")
+
+        # 更新
+        else:
+            love_old.update(love, st_mtime, bool(cache_updated))
+            tag_update(session, love.path, monster.tags)
+            session.commit()
+
+            status.extend("2")
+
+    _update_files_cache(p_obj_cache)
+
+    # 存在しないファイルをdbから削除
+    loves_delete_set = get_delete_loves(session.query(_Love).all(),
+                                        p_obj_d.glob("**/*.md"))
+    for path in loves_delete_set:
+        love = session.query(_Love).filter(_Love.path == path).first()
+        session.delete(love)
+    session.commit()
+
+    status_dict = dict(Counter(status).most_common())
+    status_dict["3"] = len(loves_delete_set)
+
+    return status_dict
+
+
+def _wrapper_create_engine(url):
+    db_name = url.split(':')[0]
+    connect_args = {"check_same_thread": False} if db_name == 'sqlite' else {}
+    engine = _create_engine(url, connect_args=connect_args)
+    return engine
 
 
 def make_session(url):
@@ -24,98 +110,25 @@ def make_session(url):
     return session
 
 
-def _wrapper_create_engine(url):
-    db_name = url.split(':')[0]
-    connect_args = {"check_same_thread": False} if db_name == 'sqlite' else {}
-    logger.debug(f'Using {db_name}.')
-    engine = _create_engine(url, connect_args=connect_args)
-    return engine
+def scss_2_css(p_obj_scss, p_obj_d_css):
+    css = _sass.compile(filename=str(p_obj_scss))
+    file_name = p_obj_d_css / p_obj_scss.with_suffix('.css').name
+    with file_name.open(mode="w") as f:
+        f.write(css)
 
 
-def building2(config):
-    template_file = config.template_file
-    if not _exists(template_file):
-        _makedirs(config.template_folder, exist_ok=True)
-        _make_template(template_file)
+def compile_scss(p_obj_d_scss, p_obj_d_css, p_obj_cache):
+    if not p_obj_d_scss.exists():
+        return None
 
-    path_scss, path_css = config.scss_css
-    if not _exists(path_scss):
-        _makedirs(path_scss, exist_ok=True)
-        logger.debug(f"makedirs({path_scss})")
-    _sass.compile(dirname=(path_scss, path_css))
-    logger.info(f"compiled scss {_glob(path_scss+'/*.scss')}")
+    p_obj_d_css.mkdir(parents=True, exist_ok=True)
 
-    if not _debug_mode():
-        return 0
+    cache_updated = _get_scss_cache(p_obj_cache)
 
-    from .need import (make_writer as _make_writer, wakatigaki as _wakatigaki)
-    writer = _make_writer(config.dir_index)
+    p_obj_all = p_obj_d_scss.glob("**/*.scss")
 
-    session = make_session(config.url)
+    r = _check_updated(cache_updated, p_obj_all)
+    for p_obj_scss in r:
+        scss_2_css(p_obj_scss, p_obj_d_css)
 
-    path_list = []
-    for cat, v in config.category.items():
-        logger.debug(f'cat: {cat}, {v}')
-        if v is not None and v.get('url', False):
-            logger.debug("making url.md from yaml")
-            path = _join(config.path_contents_dir, cat, '*.yaml')
-            for file_y in _glob(path):
-                _url_2_md(file_y, _join(config.path_contents_dir, cat))
-
-        path = _join(config.path_contents_dir, cat, '*.md')
-        for file in _glob(path):
-            logger.debug(f"Deal w/ {file}")
-            auto_rewrote = None
-            if v is not None:
-                auto_rewrote = v.get('auto_rewrote', auto_rewrote)
-            monster = _Monster(file, auto_rewrote=auto_rewrote)
-            m = session.query(_Love).filter_by(path=monster.path).first()
-            content = _wakatigaki(monster.contents)
-            path_list.append(monster.path)
-
-            writer.add_document(title=monster.title, path=monster.path,
-                                content=(content + monster.tags_str))
-            if m is None:
-                # 新規の記事の場合はデータベースへ追加する。
-                logger.debug(f'Add a new {monster} to database')
-                session.add(monster.love)
-                session.commit()
-
-                logger.debug(f"add doc to dir_index: {monster.path}")
-
-                continue
-
-            if monster.hash != m.hash:
-                # 登録済みの記事においてヘッダーが更新されている場合。
-                log_txt = 'It looks like the header has changed.'
-                logger.debug(log_txt)
-
-                tags_new = set([tag.tag for tag in monster.love.tags])
-                tags_old = set([tag.tag for tag in m.tags])
-
-                # delete
-                tags_diff = tags_old - tags_new
-                cond_1 = _Blue.love_path == monster.path
-                cond_2 = _Blue.tag.in_(tags_diff)
-                cond = _and_(cond_1, cond_2)
-                tags_delete = session.query(_Blue).filter(cond).all()
-                for tag in tags_delete:
-                    session.delete(tag)
-                    session.commit()
-                logger.debug(f"delet tag list: {tags_diff}")
-
-                # add
-                for tag in (tags_diff := tags_new - tags_old):
-                    session.add(_Blue(monster.path, tag))
-                    session.commit()
-                logger.debug(f"add tag list: {tags_diff}")
-
-            m.set_all(*monster.love.to_tuple())
-            session.commit()
-
-    for v in session.query(_Love).filter(_Love.path.notin_(path_list)).all():
-        session.delete(v)
-        session.commit()
-
-    writer.commit()
-    session.close()
+    _update_scss_cache(p_obj_cache)

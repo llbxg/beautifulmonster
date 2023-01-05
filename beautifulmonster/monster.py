@@ -1,89 +1,137 @@
-from datetime import timedelta as _timedelta
+from datetime import datetime as _datetime
+from logging import getLogger as _getLogger
+from pathlib import Path as _Path, PosixPath as _PosixPath
+import re as _re
+from typing import (NamedTuple as _NamedTuple, List as _List,
+                    Union as _Union,
+                    Optional as _Optional)
+
 
 import yaml as _yaml
 
-from .ohh import Blue as _Blue, Love as _Love
+
+from .util import str_2_datetime as _s2d
+from .ohh import Love as _Love
 from .stew import Pot as _Pot
-from .utils import (make_hash as _make_hash, make_path as _make_path,
-                    read_txt as _read_txt, get_rewrote as _get_rewrote,
-                    separate_yamlblock_contents as _s_y_c,
-                    str_2_datetime as _str_2_datetime,
-                    get_created as _get_created)
+
+logger = _getLogger(__name__)
 
 
-from markupsafe import Markup as _Markup
+class Head(_NamedTuple):
+    title: _Optional[str]
+    created: _Optional[_datetime]
+    updated: _Optional[_datetime]
+    tag: _Optional[_List]
 
 
-class Monster(object):
-    """
-    Monsterはtemplateへ情報を提供する。Loveを通してdbとデータを共有する。
-    """
+class Monster(_NamedTuple):
+    name: str
+    head: _Union[Head, None]
+    body: str
 
-    def __init__(self, path, auto_rewrote=None, toc_depth=2):
-        self.text = _read_txt(path)
+    def extract_love(self, st_mtime=None):
+        path = self.name
+        head = self.head
+        if head is None:
+            return None
 
-        self.yamlblock, self.contents = _s_y_c(self.text)
-        self.hash2 = _make_hash(self.contents)
-        self.soup = _Pot(self.contents, toc=toc_depth)
+        title = path if head.title is None else head.title
+        created = head.created
+        updated = head.updated
 
-        self.config = {}
-        self.hash = 'no yamlblock'
-        if self.yamlblock is not None:
-            self.config = _yaml.load(self.yamlblock, Loader=_yaml.BaseLoader)
-            self.hash = _make_hash(self.yamlblock)
+        if st_mtime is None:
+            return _Love.make(path, title, created, updated)
 
-        self.path = _make_path(path)
+        if created is None:
+            created = st_mtime
 
-        title = self.soup.first_h1()
-        if title is None:
-            title = self.path[1:-1]
-        for v in ['title', 'alias']:
-            title = self.config.get(v, title)
+        return _Love.make(path, title, created, updated)
 
-        created = self.config.get('created', _get_created(path))
-        created = _str_2_datetime(created)
-
-        rewrote = None
-        if (auto_rewrote is not None) and isinstance(auto_rewrote, int):
-            delta = _timedelta(days=auto_rewrote)
-            rewrote = _get_rewrote(path)
-            if (created is not None) and ((rewrote - created) < delta):
-                rewrote = None
-
-        self.love = _Love(self.path, title,
-                          self.config.get('created', created),
-                          self.config.get('rewrote', rewrote),
-                          self.hash, self.hash2)
-
-        tags = self.config.get('tag', [])
-        if isinstance(tags, str):
-            tags = [tags]
-
-        self.love.tags = [_Blue(self.path, tag) for tag in tags]
+    @property
+    def tags(self):
+        if self.head is not None:
+            return self.head.tag
+        else:
+            return []
 
     @property
     def html(self):
-        return self.soup.pour()
-
-    def __repr__(self):
-        return (f'Monster({self.path})')
-
-    # from template ---
-    def __getitem__(self, key):
-        return getattr(self.love, key)
-
-    @property
-    def title(self):
-        return _Markup(self.love.title)
-
-    @property
-    def katex(self):
-        return self.soup.katex
+        return _Pot(self.body).pour()
 
     @property
     def doc(self):
-        return self.soup.get_doc()
+        return _Pot(self.body).get_doc()
 
     @property
-    def tags_str(self):
-        return " " + " ".join([tag.tag for tag in self.love.tags])
+    def title(self):
+        if self.head is not None:
+            return self.head.title
+        return None
+
+    @property
+    def full_str(self):
+        h = ""
+        if self.head is not None:
+            h = " ".join([str(i) for i in self.head])
+        return self.name + self.body + h
+
+
+def read_str_monster(p_obj):
+    if not isinstance(p_obj, _PosixPath):
+        p_obj = _Path(str(p_obj))
+
+    ext = p_obj.suffix
+
+    if ext != ".md":
+        return None
+
+    if p_obj.exists():
+        with p_obj.open() as f:
+            str_body = f.read()
+    else:
+        logger.warning(f"Unable to read {p_obj}, maybe it doesn't exist.")
+        str_body = None
+
+    return str_body
+
+
+def create_head(str_header):
+    yaml_header = _yaml.load(str_header, Loader=_yaml.BaseLoader)
+
+    title = yaml_header.get('title', None)
+    created = _s2d(yaml_header.get('created', None))
+    updated = _s2d(yaml_header.get('updated', None))
+
+    tag = yaml_header.get('tag', [])
+    if isinstance(tag, str):
+        tag = [tag]
+
+    return Head(title, created, updated, tag)
+
+
+def monster_surgery(str_body, mold_head=True):
+    if str_body is None:
+        return None, ""
+
+    if not str_body.startswith("---"):
+        return None, str_body
+
+    header, main = None, str_body
+
+    pattern = r"^---(?P<header>.*?)---[ \t]*\r?\n(?P<main>.*)"
+    m = _re.search(pattern, str_body, _re.DOTALL)
+    if m is not None:
+        str_header = m.group("header")
+        main = m.group("main")
+        if mold_head:
+            header = create_head(str_header)
+
+    return header, main
+
+
+def create_monster(p_obj, mold_head=True):
+    str_body = read_str_monster(p_obj)
+    body = monster_surgery(str_body, mold_head=mold_head)
+    p = p_obj.relative_to(p_obj.cwd())
+    path = str(_Path(*p.parts[1:]))
+    return Monster(path, *body)

@@ -1,13 +1,21 @@
-from os import makedirs as _makedirs
+from distutils.util import strtobool as _strtobool
+from os import environ as _environ
+
 
 from whoosh.index import create_in as _create_in, open_dir as _open_dir
 from whoosh.fields import Schema as _Schema, TEXT as _TEXT, ID as _ID
 from whoosh.qparser import MultifieldParser as _MultifieldParser
 
-from .utils import debug_mode as _debug_mode
+
+from .monster import create_monster as _create_monster
 
 
-if _debug_mode():
+def debug_mode():
+    debug = _strtobool(_environ.get('BM_DEBUG', 'False'))
+    return bool(debug)
+
+
+if debug_mode():
     from janome.analyzer import Analyzer as _Analyzer
     from janome import charfilter as _charfilter
     from janome import tokenfilter as _tokenfilter
@@ -28,14 +36,22 @@ if _debug_mode():
 
         return " ".join(results)
 
-    def make_writer(dir_index):
+    def make_writer(p_obj_d_index):
         schema = _Schema(title=_TEXT(stored=True),
                          path=_ID(stored=True), content=_TEXT)
-
-        _makedirs(dir_index, exist_ok=True)
-        writer = _create_in(dir_index, schema).writer()
+        p_obj_d_index.mkdir(parents=True, exist_ok=True)
+        writer = _create_in(str(p_obj_d_index), schema).writer()
 
         return writer
+
+    def build_for_search(pobj_parent, p_obj_d_index):
+        writer = make_writer(p_obj_d_index)
+        for r in pobj_parent.glob("**/*.md"):
+            monster = _create_monster(r)
+            content = wakatigaki(monster.full_str)
+            writer.add_document(title=monster.name, path=monster.name,
+                                content=content)
+        writer.commit()
 
 
 def searching(word, dir_index):

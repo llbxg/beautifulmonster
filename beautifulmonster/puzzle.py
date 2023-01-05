@@ -1,28 +1,32 @@
-from glob import glob as _glob
-from hashlib import md5 as _md5
-from logging import getLogger as _getLogger
-from os import remove as _remove
-from os.path import join as _join, basename as _basename
+from pathlib import Path as _Path
 from urllib import parse as _parse
-from urllib.request import urlopen as _urlopen
 
+from jinja2 import (Environment as _Environment,
+                    FileSystemLoader as _FileSystemLoader)
 from markupsafe import Markup as _Markup
 
-from .config import env as _env, path_templates_jinja2 as _path_templates
-from .utils import (get_update_date as _get_update_date,
-                    get_base_path as _get_base_path, read_yaml as _read_yaml,
-                    get_title_tag_string as _get_title_tag_string)
+
+p_obj_d_template_jinja2 = _Path(__file__).parent / "templates"
+
+env = _Environment(loader=_FileSystemLoader(p_obj_d_template_jinja2))
 
 
-_logger = _getLogger(__name__)
+def make_template(p_obj_template):
+    if p_obj_template.exists():
+        return None
 
-
-def make_template(template_file):
-    with open(_join(_path_templates, 'template.j2')) as f:
+    p_obj_t = p_obj_d_template_jinja2 / "template.j2"
+    with p_obj_t.open() as f:
         data = f.read()
 
-    with open(template_file, mode='w') as f:
+    with p_obj_template.open(mode='w') as f:
         f.write(data)
+
+
+def make_icons(p_obj_static):
+    tmpl = env.get_template('icon.j2')
+    d = {"static": p_obj_static}
+    return _Markup(tmpl.render(d))
 
 
 def make_fonts(fonts):
@@ -36,131 +40,69 @@ def make_fonts(fonts):
     for font_name, c in fonts.items():
         font_weight = ''
         if c is not None:
-            s = c.get('weight', "").replace(',', ';')
+            s = c.get('weight', "")
+            if isinstance(s, int):
+                s = str(s)
+            s = s.replace(',', ';')
             if len(s) != 0:
                 font_weight = f":wght@{s}"
         font_name = font_name.replace(" ", "+")
         font_list.append((font_name, font_weight))
 
-    tmpl = _env.get_template('fonts.j2')
+    tmpl = env.get_template('fonts.j2')
     d = {'icon': icon, 'font_list': font_list}
 
     return _Markup(tmpl.render(d))
 
 
-def make_icons(static):
-    tmpl = _env.get_template('icon.j2')
-    d = {"static": static}
-    return _Markup(tmpl.render(d))
+def _return_dic(site_name, title, category, doc, ogp_type, url, image_url):
+    return {'site_name': site_name, 'title': title, 'category': category,
+            'description': doc, 'ogp_type': ogp_type, 'url': url,
+            'image_url': image_url}
 
 
-def making_for_ogp(config, category, **kwargs):
-    cat_list = list(config.category.keys())
+def make_ogp(cat, category, site_name, base_url, ogp, *, monster=None,
+             **kwargs):
+    tmpl = env.get_template('opg.j2')
 
-    site_name = config.site_name
-    monster = kwargs.get('monster', None)
+    cat_list = list(category.keys())
+    title = site_name
+    url = base_url
 
-    if monster is not None:
-        title = f'{monster.title} | {site_name}'
-    else:
-        title = site_name
+    image_url = ogp.get("image_url", None)
 
-    ogp = config.ogp
-    image_url = ogp.images
-    url = config.base_url
-
-    if category in cat_list:
+    if cat in cat_list:
         ogp_type = 'article'
         if monster is not None:
+            title = f'{monster.title} | {site_name}'
             doc = monster.doc
-            path = monster.path
-            url = _parse.urljoin(url, path)
+            url = _parse.urljoin(base_url, monster.name)
         else:
-            doc = 'Where is monster ?'
-    else:
-        ogp_type = 'website'
-        description = ogp.descriptions
-        err = ogp.desc_error
-        doc = description.get(category, err)
+            title = site_name
+            doc = "Monster is not Nones"
+            url = base_url
+        d = _return_dic(site_name, title, cat, doc, ogp_type, url, image_url)
+        return _Markup(tmpl.render(d))
 
-        if (category == 'tag') and (doc is not None):
-            tag = kwargs.get('tag', 'no tag info')
-            doc = doc.replace('$tag$', tag)
-            url = _join(url, 'tag', tag)
+    ogp_type = "website"
+    ogp_descriptions = ogp.get("description", {})
+    doc = ogp_descriptions.get(cat, "Not set description in ogp field")
 
-        elif (category == 'search') and (doc is not None):
-            word = kwargs.get('word', 'no word info')
-            doc = doc.replace('$word$', word)
-            url = _join(url, 'search')+f'?word={word}'
+    if cat == "tag":
+        tag = kwargs.get('tag', 'no_tag_info')
 
-        elif category == 'home':
-            url = url
+        title = f'#{tag} | {site_name}'
+        doc = doc.replace('$tag$', tag)
+        url = _parse.urljoin(base_url, 'tag/{tag}')
 
-        elif category == 'not_found':
-            url = f'{url}/404/'
+    elif cat == 'search':
+        word = kwargs.get('word', 'no_word_info')
 
-        else:
-            url = f'{url}/{category}/'
+        title = f'search {word} | {site_name}'
+        doc = doc.replace('$word$', word)
+        url = _parse.urljoin(base_url, 'search/?word={word}')
 
-    tmpl = _env.get_template('opg.j2')
-    d = {'site_name': site_name, 'title': title, 'category': category,
-         'description': doc, 'ogp_type': ogp_type,
-         'url': url, 'image_url': image_url}
+    d = _return_dic(site_name, title, category, doc, ogp_type, url, image_url)
     hey = tmpl.render(d)
 
     return _Markup(hey)
-
-
-def url_2_md(path, dir_out):
-    hash_existing = [_basename(hmd) for hmd in _glob(dir_out+'/*.md')]
-
-    y = _read_yaml(path)
-
-    hash_new = []
-    for k, v in y.items():
-        base = _get_base_path(path)
-
-        _hash = _md5()
-        _hash.update((k+str(v)).encode())
-        h = f'zzz_{base}_{_hash.hexdigest()}.md'
-        hash_new.append(h)
-
-        if h in hash_existing:
-            continue
-
-        try:
-            response = _urlopen(k)
-
-            title = _get_title_tag_string(response)
-            title = 'Missing title tag on site.' if title is None else title
-
-            for t in ['title', 'alias']:
-                title = v.get(t, title)
-
-        except Exception as e:
-            _logger.debug(f"urlopen: {e}")
-            title = str(e)
-
-        for target, r in {":": "&#058;", "\n": ""}.items():
-            title = title.replace(target, r)
-
-        created = v.get('created', _get_update_date(path))
-
-        memo = v.get('memo', '')
-        if isinstance(memo, list):
-            memo = "\n".join(memo)
-
-        tag = v.get('tag', [])
-        tag = [tag] if isinstance(tag, str) else tag
-        tag = [base] if tag is None else tag + [base]
-
-        d = {'url': k, 'title': title,
-             'memo': memo, 'tags': tag, 'created': created}
-        tmpl = _env.get_template('url.j2')
-        with open(f"{dir_out}/{h}", 'w') as f:
-            f.write(tmpl.render(d))
-
-    diff = set(hash_existing) - set(hash_new)
-    for d in diff:
-        _logger.debug(f'remove: {d}')
-        _remove(dir_out+'/'+d)
