@@ -85,6 +85,8 @@ def make_ogp(cat, category, site_name, base_url, ogp, *, monster=None,
     ogp_descriptions = ogp.get("description", {})
     doc = ogp_descriptions.get(cat, "Not set description in ogp field")
 
+    image_url = ogp.get("image_url", None)
+
     if cat == "tag":
         tag = kwargs.get('tag', 'no_tag_info')
 
@@ -101,7 +103,7 @@ def make_ogp(cat, category, site_name, base_url, ogp, *, monster=None,
 
     d = {'site_name': site_name, 'title': title, 'category': category,
          'description': doc, 'ogp_type': ogp_type,
-         'url': url, 'image_url': None}
+         'url': url, 'image_url': image_url}
     hey = tmpl.render(d)
 
     return _Markup(hey)
