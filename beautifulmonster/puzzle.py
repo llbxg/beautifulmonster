@@ -55,9 +55,10 @@ def make_fonts(fonts):
     return _Markup(tmpl.render(d))
 
 
-def _return_dic(site_name, title, category, doc, ogp_type, url):
+def _return_dic(site_name, title, category, doc, ogp_type, url, image_url):
     return {'site_name': site_name, 'title': title, 'category': category,
-            'description': doc, 'ogp_type': ogp_type, 'url': url}
+            'description': doc, 'ogp_type': ogp_type, 'url': url,
+            'image_url': image_url}
 
 
 def make_ogp(cat, category, site_name, base_url, ogp, *, monster=None,
@@ -67,6 +68,8 @@ def make_ogp(cat, category, site_name, base_url, ogp, *, monster=None,
     cat_list = list(category.keys())
     title = site_name
     url = base_url
+
+    image_url = ogp.get("image_url", None)
 
     if cat in cat_list:
         ogp_type = 'article'
@@ -78,14 +81,12 @@ def make_ogp(cat, category, site_name, base_url, ogp, *, monster=None,
             title = site_name
             doc = "Monster is not Nones"
             url = base_url
-        d = _return_dic(site_name, title, cat, doc, ogp_type, url)
+        d = _return_dic(site_name, title, cat, doc, ogp_type, url, image_url)
         return _Markup(tmpl.render(d))
 
     ogp_type = "website"
     ogp_descriptions = ogp.get("description", {})
     doc = ogp_descriptions.get(cat, "Not set description in ogp field")
-
-    image_url = ogp.get("image_url", None)
 
     if cat == "tag":
         tag = kwargs.get('tag', 'no_tag_info')
@@ -101,9 +102,7 @@ def make_ogp(cat, category, site_name, base_url, ogp, *, monster=None,
         doc = doc.replace('$word$', word)
         url = _parse.urljoin(base_url, 'search/?word={word}')
 
-    d = {'site_name': site_name, 'title': title, 'category': category,
-         'description': doc, 'ogp_type': ogp_type,
-         'url': url, 'image_url': image_url}
+    d = _return_dic(site_name, title, category, doc, ogp_type, url, image_url)
     hey = tmpl.render(d)
 
     return _Markup(hey)
