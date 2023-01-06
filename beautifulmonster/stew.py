@@ -27,7 +27,7 @@ class Pot(object):
     markdown -> html
     """
 
-    def __init__(self, contents, toc=2):
+    def __init__(self, contents, toc=2, h2_num=False):
         extensions = ['extra', 'attr_list', 'nl2br', 'tables',
                       _TocExtension(baselevel=1, toc_depth=toc),
                       _Wiki(base_url='/', end_url='/')]
@@ -39,6 +39,8 @@ class Pot(object):
 
         if toc:
             self.custom_toc()
+        if h2_num:
+            self.number()
 
     def pour(self):
         return _Markup(str(self.soup))
@@ -99,3 +101,16 @@ class Pot(object):
     def get_doc(self):
         doc = self.soup.find('p')
         return doc.text if doc is not None else 'Failed to extract doc ;;'
+
+    def number(self):
+        #<h2>記事内の見出しに番号を振る
+        h2 = self.soup.find_all("h2")
+        for num, i in enumerate(h2,1):
+            tag = self.soup.new_tag("div")
+            tag["class"]= "article-h2-title"
+            i.wrap(tag)
+
+            tag = self.soup.new_tag("div")
+            tag["class"]= "article-h2-number"
+            tag.string = str(num)
+            i.insert_before(tag)

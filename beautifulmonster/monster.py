@@ -47,6 +47,9 @@ class Monster(_NamedTuple):
 
         return _Love.make(path, title, created, updated)
 
+    def make_html(self, **kwargs):
+        return _Pot(self.body, **kwargs).pour()
+
     @property
     def tags(self):
         if self.head is not None:
