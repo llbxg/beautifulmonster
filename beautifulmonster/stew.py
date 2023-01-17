@@ -103,14 +103,13 @@ class Pot(object):
         return doc.text if doc is not None else 'Failed to extract doc ;;'
 
     def number(self):
-        #<h2>記事内の見出しに番号を振る
         h2 = self.soup.find_all("h2")
-        for num, i in enumerate(h2,1):
+        for num, i in enumerate(h2, 1):
             tag = self.soup.new_tag("div")
-            tag["class"]= "article-h2-title"
+            tag["class"] = "article-h2-title"
             i.wrap(tag)
 
             tag = self.soup.new_tag("div")
-            tag["class"]= "article-h2-number"
+            tag["class"] = "article-h2-number"
             tag.string = str(num)
             i.insert_before(tag)
