@@ -96,13 +96,18 @@ def make_app(p_obj_d_parent=_default_p_obj_config,
 
     for category, value in config.category.items():
         def temp_fucn(_id, cat, v):
-            path = config.p_obj_d_contents / cat / f'{_id}.md'
+            p_tmp = _Path(cat) / f'{_id}.md'
+            session = make_session(config.url)
+            love = session.query(Love).filter(Love.path == str(p_tmp)).first()
+            session.close()
 
             kwargs = v if v is not None else {}
 
+            path = config.p_obj_d_contents / cat / f'{_id}.md'
             monster = create_monster(path)
 
-            r = wrapper_render_template(cat, monster=monster, **kwargs)
+            r = wrapper_render_template(cat, monster=monster, love=love,
+                                        **kwargs)
             return r
 
         view_func = _partial(temp_fucn, cat=category, v=value)
