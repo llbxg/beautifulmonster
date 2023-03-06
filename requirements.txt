@@ -1,6 +1,6 @@
 beautifulsoup4
 flask
-Flask-SQLAlchemy
+Flask-SQLAlchemy>=2.0
 markdown
 pyyaml
 janome

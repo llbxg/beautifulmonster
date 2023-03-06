@@ -1,6 +1,6 @@
 from sqlalchemy import desc as _desc
 from sqlalchemy.ext.declarative import declarative_base as _declarative_base
-from sqlalchemy.orm import backref as _backref, relation as _relation
+from sqlalchemy.orm import backref as _backref, relationship as _relation
 from sqlalchemy.schema import Column as _Column, ForeignKey as _ForeignKey
 from sqlalchemy.sql import func as _func
 from sqlalchemy.types import (DateTime as _DateTime,
