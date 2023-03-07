@@ -19,6 +19,7 @@ def make_template(p_obj_template):
     with p_obj_t.open() as f:
         data = f.read()
 
+    p_obj_template.parent.mkdir(parents=True)
     with p_obj_template.open(mode='w') as f:
         f.write(data)
 
