@@ -66,7 +66,7 @@ def make_app(p_obj_d_parent=_default_p_obj_config,
     make_template(config.p_obj_template)
     icons = make_icons(config.p_obj_static) if s_icons else None
 
-    fonts = make_fonts(config.font) if s_fonts else None
+    fonts = make_fonts(config.font) if s_fonts else ""
 
     app = _Flask(__name__, static_folder=None,
                  template_folder=config.p_obj_d_template)
