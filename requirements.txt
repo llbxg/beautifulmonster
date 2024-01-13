@@ -2,6 +2,7 @@ beautifulsoup4
 flask
 Flask-SQLAlchemy>=2.0
 markdown
+pymdown-extensions
 pyyaml
 janome
 whoosh

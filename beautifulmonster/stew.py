@@ -30,7 +30,8 @@ class Pot(object):
     def __init__(self, contents, toc=2, h2_num=False):
         extensions = ['extra', 'attr_list', 'nl2br', 'tables',
                       _TocExtension(baselevel=1, toc_depth=toc),
-                      _Wiki(base_url='/', end_url='/')]
+                      _Wiki(base_url='/', end_url='/'),
+                      'pymdownx.tilde']
         html_string = _markdown(contents, extensions=extensions)
         self.soup = _BeautifulSoup(html_string, "html.parser")
 
